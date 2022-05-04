@@ -1,0 +1,34 @@
+# Thanks shade team
+
+name: Rust
+
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+
+      - uses: actions-rs/cargo@v1.0.1
+        with:
+          command: build
+          args: --release --target wasm32-unknown-unknown --manifest-path=Cargo.toml
+
+      - uses: actions-rs/cargo@v1.0.1
+        with:
+          command: unit-test
+          args: 
