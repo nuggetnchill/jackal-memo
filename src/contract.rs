@@ -67,15 +67,31 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
     match msg {
         QueryMsg::GetMemo {
             address,
-            auth,
             page,
             page_size,
-        // } => to_binary(&query_memo(deps, address, auth, page, page_size)?),
-        } => todo!(),
+        } => to_binary(&query_memo(deps, address, page, page_size)?),
     }
 }
 
-
+fn query_memo<S: Storage, A: Api, Q: Querier>(
+        deps: &Extern<S, A, Q>,
+        address: HumanAddr,
+        page: Option<u32>,
+        page_size: Option<u32>,
+    ) -> StdResult<MsgsResponse> {
+            
+        let msgs = Message::get_messages(
+                &deps.storage,
+                &address,
+                page.unwrap_or(0),
+                page_size.unwrap_or(10),
+            )?
+            .0;
+    
+        let length = Message::len(&deps.storage, &address);
+    
+        Ok(MsgsResponse { msgs, length })
+    }
 
 #[cfg(test)]
 mod tests {
@@ -113,66 +129,38 @@ mod tests {
         
         assert_eq!(0, res.messages.len());
     }
-    // #[test]
-    // fn create_key() {
-    //     let mut deps = mock_dependencies(20, &coins(2, "token"));
-
-    //     let msg = InitMsg { owner: None };
-    //     let env = mock_env("creator", &coins(2, "token"));
-    //     let _res = init(&mut deps, env, msg).unwrap();
-
-    //     let env = mock_env("anyone", &coins(2, "token"));
-    //     let msg = HandleMsg::SetViewingKey {
-    //         key: "yoyo".to_string(),
-    //         padding: None,
-    //     };
-    //     let res = handle(&mut deps, env, msg).unwrap();
-
-    //     assert_eq!(0, res.messages.len());
-    // }
     
-    // #[test]
-    // fn read_message() {
-    //     let mut deps = mock_dependencies(20, &coins(2, "token"));
+    #[test]
+    fn read_message() {
+        let mut deps = mock_dependencies(20, &coins(2, "token"));
 
-    //     let msg = InitMsg { owner: None };
-    //     let env = mock_env("creator", &coins(2, "token"));
-    //     let _res = init(&mut deps, env, msg).unwrap();
+        let msg = InitMsg { owner: None };
+        let env = mock_env("creator", &coins(2, "token"));
+        let _res = init(&mut deps, env, msg).unwrap();
 
-    //     let env = mock_env("creator", &coins(2, "token"));
-    //     let msg = HandleMsg::SetViewingKey {
-    //         key: "yoyo".to_string(),
-    //         padding: None,
-    //     };
-    //     let _res = handle(&mut deps, env, msg).unwrap();
+        let env = mock_env("anyone", &coins(2, "token"));
+        let msg = HandleMsg::SendMemo {
+            to: HumanAddr("creator".to_string()),
+            message: "hello world".to_string(),
+        };
+        let res = handle(&mut deps, env, msg).unwrap();
 
-    //     // anyone can increment
-    //     let env = mock_env("anyone", &coins(2, "token"));
-    //     let msg = HandleMsg::SendMemo {
-    //         to: HumanAddr("creator".to_string()),
-    //         message: "hello world".to_string(),
-    //     };
-    //     let res = handle(&mut deps, env, msg).unwrap();
+        assert_eq!(0, res.messages.len());
 
-    //     assert_eq!(0, res.messages.len());
-
-    //     let res = query(
-    //         &deps,
-    //         QueryMsg::GetMemo {
-    //             address: HumanAddr("creator".to_string()),
-    //             auth: ViewingPermissions {
-    //                 permit: None,
-    //                 key: Some("yoyo".to_string()),
-    //             },
-    //             page: None,
-    //             page_size: None,
-    //         },
-    //     )
-    //     .unwrap();
-    //     let value: MsgsResponse = from_binary(&res).unwrap();
-    //     assert_eq!(value.msgs.len(), 1);
-    //     assert_eq!(value.msgs[0].message, "hello world".to_string());
-    // }
+        let res = query(
+            &deps,
+            QueryMsg::GetMemo {
+                address: HumanAddr("creator".to_string()),
+                page: None,
+                page_size: None,
+            },
+        )
+        .unwrap();
+        let value: MsgsResponse = from_binary(&res).unwrap();
+        println!("{:?}", &value.msgs[0]);
+        assert_eq!(value.msgs.len(), 1);
+        assert_eq!(value.msgs[0].message, "hello world".to_string());
+    }
 
     // #[test]
     // fn read_message_fail() {

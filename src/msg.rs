@@ -23,7 +23,7 @@ pub enum HandleMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
-    GetMemo { address: HumanAddr, auth: ViewingPermissions, page: Option<u32>, page_size: Option<u32> },
+    GetMemo { address: HumanAddr, page: Option<u32>, page_size: Option<u32> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
